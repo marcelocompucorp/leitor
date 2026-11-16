@@ -103,6 +103,17 @@ body.lendo #lista-painel { display: none; }
   cursor: pointer;
 }
 #lista li:hover, #lista li.selecionada { background: var(--fundo-2); }
+#lista li.divisor {
+  display: block;
+  cursor: default;
+  padding: 18px 16px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--destaque);
+  background: none;
+  border-bottom: 0;
+}
+#lista li.divisor::first-letter { text-transform: uppercase; }
 #lista li .miniatura {
   flex: 0 0 72px;
   width: 72px;

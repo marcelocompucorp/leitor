@@ -52,6 +52,23 @@ function tempoRelativo(dataRss, agora = Date.now()) {
   return data.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
 }
 
+// Texto do divisor de data na lista: "Hoje", "Ontem" ou o dia por extenso,
+// sempre pelo dia no fuso do aparelho.
+function rotuloDoDia(dataRss, agora = new Date()) {
+  const data = new Date(dataRss);
+  if (isNaN(data)) return "";
+  const dia = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diferenca = Math.round((dia(agora) - dia(data)) / 86400000);
+  if (diferenca === 0) return "Hoje";
+  if (diferenca === 1) return "Ontem";
+  return data.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    ...(data.getFullYear() !== agora.getFullYear() ? { year: "numeric" } : {}),
+  });
+}
+
 if (typeof module !== "undefined") {
-  module.exports = { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo };
+  module.exports = { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia };
 }

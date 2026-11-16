@@ -324,8 +324,17 @@ function desenhar() {
 
   const lista = $("#lista");
   lista.replaceChildren();
-  const itens = visiveis();
+  const itens = visiveis().sort((a, b) => new Date(b.data) - new Date(a.data));
+  let diaAnterior = null;
   for (const materia of itens) {
+    const dia = rotuloDoDia(materia.data);
+    if (dia !== diaAnterior) {
+      const divisor = document.createElement("li");
+      divisor.className = "divisor";
+      divisor.textContent = dia;
+      lista.append(divisor);
+      diaAnterior = dia;
+    }
     const li = document.createElement("li");
     const lida = estado.aba === "noticias" && estado.lidos.has(materia.guid);
     li.className = lida ? "lida" : "";

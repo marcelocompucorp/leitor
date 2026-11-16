@@ -1,7 +1,7 @@
 // Rodar: node --test testes/
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo } = require("../logica.js");
+const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia } = require("../logica.js");
 
 const FEEDS_TXT = `# Comentário
 # outro
@@ -68,4 +68,22 @@ test("tempoRelativo", () => {
   assert.equal(tempoRelativo("Mon, 16 Nov 2026 17:00:00 +0000", agora), "5 h");
   assert.match(tempoRelativo("Wed, 11 Nov 2026 10:00:00 +0000", agora), /11/);
   assert.equal(tempoRelativo("não é data", agora), "");
+});
+
+test("rotuloDoDia: Hoje, Ontem e data por extenso", () => {
+  const agora = new Date(2026, 10, 16, 22, 0);                       // 16/11/2026 22h, hora local
+  const em = (dia, hora = 12) => new Date(2026, 10, dia, hora).toUTCString();
+  assert.equal(rotuloDoDia(em(16, 0), agora), "Hoje");
+  assert.equal(rotuloDoDia(em(15, 23), agora), "Ontem");
+  assert.equal(rotuloDoDia(em(12), agora), "quinta-feira, 12 de novembro");
+  assert.equal(rotuloDoDia(new Date(2025, 11, 31, 12).toUTCString(), agora), "quarta-feira, 31 de dezembro de 2025");
+  assert.equal(rotuloDoDia("não é data", agora), "");
+});
+
+test("rotuloDoDia agrupa pelo dia local, não pelo dia em UTC", () => {
+  const agora = new Date(2026, 10, 16, 12, 0);
+  const meiaNoiteEMeia = new Date(2026, 10, 16, 0, 30);
+  const quaseMeiaNoite = new Date(2026, 10, 15, 23, 30);
+  assert.equal(rotuloDoDia(meiaNoiteEMeia.toUTCString(), agora), "Hoje");
+  assert.equal(rotuloDoDia(quaseMeiaNoite.toUTCString(), agora), "Ontem");
 });
