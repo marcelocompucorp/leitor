@@ -76,23 +76,6 @@ async function lerTexto(caminho) {
   return resposta.text();
 }
 
-// Mesmo formato que o filtro.py lê: "[Pasta]" e "URL | Nome | filtrar".
-function lerFeeds(texto) {
-  const feeds = [];
-  let pasta = "Feeds";
-  for (const bruta of texto.split("\n")) {
-    const linha = bruta.trim();
-    if (!linha || linha.startsWith("#")) continue;
-    if (linha.startsWith("[") && linha.endsWith("]")) {
-      pasta = linha.slice(1, -1).trim();
-      continue;
-    }
-    const [url, nome, filtro = ""] = linha.split("|").map((p) => p.trim());
-    feeds.push({ url, nome: nome || url, pasta, filtrar: filtro.startsWith("filtrar") });
-  }
-  return feeds;
-}
-
 async function lerArquivo(caminho) {
   const resposta = await github(`/contents/${caminho}`, {
     headers: { Accept: "application/vnd.github.raw+json" },
@@ -140,12 +123,7 @@ async function sincronizarLidos() {
         throw new Error(`Falha ao ler os lidos: ${resposta.status}`);
       }
 
-      // remoto + o que marquei aqui - o que desmarquei aqui, só entre as matérias que existem
-      const existentes = new Set(estado.materias.map((m) => m.guid));
-      const unidos = new Set(remoto);
-      estado.pendentes.add.forEach((g) => unidos.add(g));
-      estado.pendentes.remove.forEach((g) => unidos.delete(g));
-      const final = [...unidos].filter((g) => existentes.has(g)).sort();
+      const final = unirLidos(remoto, estado.pendentes, estado.materias.map((m) => m.guid));
 
       const semMudanca = estado.pendentes.add.size === 0 && estado.pendentes.remove.size === 0;
       if (semMudanca) {
@@ -256,16 +234,6 @@ async function atualizar() {
 }
 
 // ---------- desenhar ----------
-
-function tempoRelativo(dataRss) {
-  const data = new Date(dataRss);
-  if (isNaN(data)) return "";
-  const minutos = Math.round((Date.now() - data) / 60000);
-  if (minutos < 60) return `${Math.max(minutos, 1)} min`;
-  const horas = Math.round(minutos / 60);
-  if (horas < 24) return `${horas} h`;
-  return data.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
-}
 
 const pastaDe = (m) => m.pasta || "Feeds";
 
@@ -508,19 +476,6 @@ function abrirNovoFeed() {
   $("#nf-pasta").value = estado.selecao.tipo === "pasta" ? estado.selecao.nome : "";
   $("#nf-msg").textContent = "";
   $("#novo-feed").showModal();
-}
-
-function incluirNoFeedsTxt(texto, pasta, linhaNova) {
-  const linhas = texto.replace(/\n+$/, "").split("\n");
-  const cabecalho = linhas.findIndex((l) => l.trim() === `[${pasta}]`);
-  if (cabecalho === -1) return `${linhas.join("\n")}\n\n[${pasta}]\n${linhaNova}\n`;
-  // Depois do último feed da pasta (antes da próxima "[Pasta]").
-  let fim = cabecalho + 1;
-  for (let i = cabecalho + 1; i < linhas.length && !linhas[i].trim().startsWith("["); i++) {
-    if (linhas[i].trim()) fim = i + 1;
-  }
-  linhas.splice(fim, 0, linhaNova);
-  return `${linhas.join("\n")}\n`;
 }
 
 async function salvarNovoFeed() {

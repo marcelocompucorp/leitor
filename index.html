@@ -8,8 +8,9 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icone-192.png">
   <link rel="apple-touch-icon" href="icone-192.png">
-  <link rel="stylesheet" href="estilo.css?v=5">
-  <script src="app.js?v=5" defer></script>
+  <link rel="stylesheet" href="estilo.css?v=6">
+  <script src="logica.js?v=6" defer></script>
+  <script src="app.js?v=6" defer></script>
 </head>
 <body>
   <header class="topo">
@@ -73,7 +74,7 @@
       <p id="nf-msg"></p>
       <menu>
         <button type="button" id="nf-salvar">Adicionar</button>
-        <button value="fechar">Cancelar</button>
+        <button value="fechar" formnovalidate>Cancelar</button>
       </menu>
     </form>
   </dialog>
@@ -91,7 +92,7 @@
       <p id="config-msg"></p>
       <menu>
         <button type="button" id="testar-token">Testar e salvar</button>
-        <button value="fechar">Fechar</button>
+        <button value="fechar" formnovalidate>Fechar</button>
       </menu>
     </form>
   </dialog>

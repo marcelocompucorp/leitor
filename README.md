@@ -25,3 +25,16 @@ Cole no ⚙ do app, uma vez em cada aparelho.
 HTML, CSS e JS puros, sem build. Ao mudar qualquer arquivo, aumente `VERSAO`
 em `sw.js` e o `?v=` de `app.js` e `estilo.css` no `index.html`, com o mesmo
 número, para os aparelhos pegarem a versão nova sem misturar arquivos.
+
+## Testes
+
+```bash
+node --test 'testes/*.test.js'
+```
+
+`testes/logica.test.js` cobre a lógica em `logica.js` (ler e editar o
+`feeds.txt`, juntar os lidos dos dois aparelhos, tempo relativo).
+`testes/publicacao.test.js` confere o que já quebrou o app no celular: versões
+iguais em `index.html` e `sw.js`, botões de cancelar sem exigir campos, ids
+que o `app.js` usa. Rodam no GitHub Actions a cada push.
+
