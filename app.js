@@ -456,6 +456,28 @@ function montarBloco(bloco) {
       return elemento("ul", (bloco.itens || []).map((item) => elemento("li", partes(item))));
     case "citacao":
       return elemento("blockquote", partes(bloco.partes));
+    case "tabela": {
+      const VISIVEIS = 10;
+      const linhas = (bloco.linhas || []).map((linha, i) => {
+        const tr = elemento("tr", linha.map((celula) => elemento("td", [], celula)));
+        if (i >= VISIVEIS) tr.hidden = true;
+        return tr;
+      });
+      const tabela = elemento("table", [
+        elemento("thead", [elemento("tr", (bloco.colunas || []).map((c) => elemento("th", [], c)))]),
+        elemento("tbody", linhas),
+      ]);
+      const filhos = [bloco.titulo ? elemento("figcaption", [], bloco.titulo) : null, tabela].filter(Boolean);
+      if (linhas.length > VISIVEIS) {
+        const botao = elemento("button", [], `Ver todos os ${linhas.length} trechos`);
+        botao.addEventListener("click", () => {
+          linhas.forEach((tr) => (tr.hidden = false));
+          botao.remove();
+        });
+        filhos.push(botao);
+      }
+      return elemento("figure", filhos);
+    }
     case "img": {
       const src = linkSeguro(bloco.src);
       if (!src) return document.createTextNode("");
