@@ -14,6 +14,8 @@ const estado = {
   lidos: new Set(),      // guids lidos (local + remoto)
   pendentes: { add: new Set(), remove: new Set() }, // ainda não gravados no GitHub
   aberta: null,          // matéria na tela de leitura
+  selecao: { tipo: "tudo" }, // ou { tipo: "pasta" | "feed", nome }
+  feeds: [],             // feeds.txt: { url, nome, pasta, filtrar }
 };
 
 // ---------- armazenamento local ----------
@@ -64,6 +66,31 @@ async function github(caminho, opcoes = {}) {
     throw new ErroToken(`GitHub respondeu ${resposta.status}`);
   }
   return resposta;
+}
+
+async function lerTexto(caminho) {
+  const resposta = await github(`/contents/${caminho}`, {
+    headers: { Accept: "application/vnd.github.raw+json" },
+  });
+  if (!resposta.ok) throw new Error(`Falha ao ler ${caminho}: ${resposta.status}`);
+  return resposta.text();
+}
+
+// Mesmo formato que o filtro.py lê: "[Pasta]" e "URL | Nome | filtrar".
+function lerFeeds(texto) {
+  const feeds = [];
+  let pasta = "Feeds";
+  for (const bruta of texto.split("\n")) {
+    const linha = bruta.trim();
+    if (!linha || linha.startsWith("#")) continue;
+    if (linha.startsWith("[") && linha.endsWith("]")) {
+      pasta = linha.slice(1, -1).trim();
+      continue;
+    }
+    const [url, nome, filtro = ""] = linha.split("|").map((p) => p.trim());
+    feeds.push({ url, nome: nome || url, pasta, filtrar: filtro.startsWith("filtrar") });
+  }
+  return feeds;
 }
 
 async function lerArquivo(caminho) {
@@ -177,8 +204,11 @@ async function carregar() {
   }
   try {
     mostrarStatus("Carregando…");
-    estado.materias = (await lerArquivo("dados/materias.json")) || [];
+    const [materias, feeds] = await Promise.all([lerArquivo("dados/materias.json"), lerTexto("feeds.txt")]);
+    estado.materias = materias || [];
+    estado.feeds = lerFeeds(feeds);
     gravarLocal("leitor.materias", estado.materias);
+    gravarLocal("leitor.feeds", estado.feeds);
     esconderStatus();
     desenhar();
     await sincronizarLidos();
@@ -237,12 +267,84 @@ function tempoRelativo(dataRss) {
   return data.toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
 }
 
+const pastaDe = (m) => m.pasta || "Feeds";
+
+function naSelecao(m) {
+  const { tipo, nome } = estado.selecao;
+  if (tipo === "pasta") return pastaDe(m) === nome;
+  if (tipo === "feed") return m.fonte === nome;
+  return true;
+}
+
 function visiveis() {
-  if (estado.aba === "barradas") return estado.materias.filter((m) => !m.manter);
-  const aprovadas = estado.materias.filter((m) => m.manter);
+  const selecionadas = estado.materias.filter(naSelecao);
+  if (estado.aba === "barradas") return selecionadas.filter((m) => !m.manter);
+  const aprovadas = selecionadas.filter((m) => m.manter);
   return $("#so-nao-lidas").checked
     ? aprovadas.filter((m) => !estado.lidos.has(m.guid) || m === estado.aberta)
     : aprovadas;
+}
+
+// Pastas e feeds: os do feeds.txt, mais os que só aparecem nas matérias.
+function arvore() {
+  const pastas = new Map();
+  const incluir = (pasta, feed) => {
+    if (!pastas.has(pasta)) pastas.set(pasta, new Set());
+    if (feed) pastas.get(pasta).add(feed);
+  };
+  estado.feeds.forEach((f) => incluir(f.pasta, f.nome));
+  estado.materias.forEach((m) => incluir(pastaDe(m), m.fonte));
+  return pastas;
+}
+
+function desenharArvore() {
+  const naoLida = (m) => m.manter && !estado.lidos.has(m.guid);
+  const contar = (filtro) => estado.materias.filter((m) => naoLida(m) && filtro(m)).length;
+  const { tipo, nome } = estado.selecao;
+
+  const item = (classe, rotulo, numero, selecao) => {
+    const li = document.createElement("li");
+    li.className = classe;
+    const botao = document.createElement("button");
+    const texto = document.createElement("span");
+    texto.textContent = rotulo;
+    const qtd = document.createElement("span");
+    qtd.className = "numero";
+    qtd.textContent = numero || "";
+    botao.append(texto, qtd);
+    botao.classList.toggle("ativa", selecao.tipo === tipo && selecao.nome === nome);
+    botao.addEventListener("click", () => selecionar(selecao));
+    li.append(botao);
+    return li;
+  };
+
+  const lista = [item("pasta", "Tudo", contar(() => true), { tipo: "tudo" })];
+  for (const [pasta, feeds] of arvore()) {
+    lista.push(item("pasta", pasta, contar((m) => pastaDe(m) === pasta), { tipo: "pasta", nome: pasta }));
+    for (const feed of feeds) {
+      lista.push(item("feed", feed, contar((m) => m.fonte === feed), { tipo: "feed", nome: feed }));
+    }
+  }
+  $("#arvore").replaceChildren(...lista);
+  $("#selecao-titulo").textContent = tipo === "tudo" ? "Tudo" : nome;
+}
+
+function selecionar(selecao) {
+  estado.selecao = selecao;
+  gravarLocal("leitor.selecao", selecao);
+  fecharPastas();
+  desenhar();
+  $("#lista-painel").scrollTop = 0;
+}
+
+function abrirPastas() {
+  document.body.classList.add("pastas-abertas");
+  $("#fundo-pastas").hidden = false;
+}
+
+function fecharPastas() {
+  document.body.classList.remove("pastas-abertas");
+  $("#fundo-pastas").hidden = true;
 }
 
 function desenhar() {
@@ -250,6 +352,7 @@ function desenhar() {
   $("#contador").textContent = naoLidas ? `(${naoLidas})` : "";
   document.title = naoLidas ? `(${naoLidas}) Leitor` : "Leitor";
   $("#filtros").hidden = estado.aba === "barradas";
+  desenharArvore();
 
   const lista = $("#lista");
   lista.replaceChildren();
@@ -277,7 +380,7 @@ function desenhar() {
     titulo.textContent = materia.titulo;
     const meta = document.createElement("div");
     meta.className = "meta";
-    meta.textContent = [tempoRelativo(materia.data), materia.categorias?.[0]].filter(Boolean).join(" · ");
+    meta.textContent = [tempoRelativo(materia.data), materia.fonte].filter(Boolean).join(" · ");
     info.append(titulo, meta);
     if (estado.aba === "barradas") {
       const motivo = document.createElement("div");
@@ -311,11 +414,12 @@ async function abrir(materia, { empilhar = true } = {}) {
   if (empilhar) history.pushState({ lendo: materia.guid }, "");
 
   $("#l-titulo").textContent = materia.titulo;
-  $("#l-meta").textContent = [tempoRelativo(materia.data), ...(materia.categorias || [])].join(" · ");
+  $("#l-meta").textContent = [tempoRelativo(materia.data), materia.fonte, ...(materia.categorias || [])]
+    .filter(Boolean).join(" · ");
   const imagem = $("#l-imagem");
   imagem.hidden = !materia.imagem;
   if (materia.imagem) imagem.src = materia.imagem;
-  $("#l-motivo").textContent = `Filtro: ${materia.motivo}`;
+  $("#l-motivo").textContent = materia.motivo ? `Filtro: ${materia.motivo}` : "";
   $("#l-link").href = materia.link;
   $("#l-nao-lida").hidden = !materia.manter;
 
@@ -332,7 +436,7 @@ async function abrir(materia, { empilhar = true } = {}) {
       tratarErro(erro);
     }
   } else if (materia.manter) {
-    texto.append(paragrafo("Texto completo indisponível; abra no Engadget.", "aviso"));
+    texto.append(paragrafo("Texto completo indisponível; abra no site.", "aviso"));
   }
 
   if (materia.manter && !estado.lidos.has(materia.guid)) marcarLida(materia.guid, true);
@@ -395,10 +499,79 @@ async function testarToken() {
   }
 }
 
+// ---------- adicionar feed: acrescenta uma linha no feeds.txt ----------
+
+function abrirNovoFeed() {
+  fecharPastas();
+  const pastas = [...arvore().keys()];
+  $("#nf-pastas").replaceChildren(...pastas.map((p) => Object.assign(document.createElement("option"), { value: p })));
+  $("#nf-pasta").value = estado.selecao.tipo === "pasta" ? estado.selecao.nome : "";
+  $("#nf-msg").textContent = "";
+  $("#novo-feed").showModal();
+}
+
+function incluirNoFeedsTxt(texto, pasta, linhaNova) {
+  const linhas = texto.replace(/\n+$/, "").split("\n");
+  const cabecalho = linhas.findIndex((l) => l.trim() === `[${pasta}]`);
+  if (cabecalho === -1) return `${linhas.join("\n")}\n\n[${pasta}]\n${linhaNova}\n`;
+  // Depois do último feed da pasta (antes da próxima "[Pasta]").
+  let fim = cabecalho + 1;
+  for (let i = cabecalho + 1; i < linhas.length && !linhas[i].trim().startsWith("["); i++) {
+    if (linhas[i].trim()) fim = i + 1;
+  }
+  linhas.splice(fim, 0, linhaNova);
+  return `${linhas.join("\n")}\n`;
+}
+
+async function salvarNovoFeed() {
+  const url = $("#nf-url").value.trim();
+  const nome = $("#nf-nome").value.trim().replaceAll("|", "/");
+  const pasta = $("#nf-pasta").value.trim().replace(/[[\]]/g, "");
+  const msg = $("#nf-msg");
+  if (!/^https?:\/\/\S+$/.test(url) || !nome || !pasta) {
+    msg.textContent = "Preencha o endereço (começando com https://), o nome e a pasta.";
+    return;
+  }
+  if (estado.feeds.some((f) => f.url === url)) {
+    msg.textContent = "Esse feed já está na lista.";
+    return;
+  }
+  msg.textContent = "Salvando…";
+  try {
+    const linha = `${url} | ${nome}${$("#nf-filtrar").checked ? " | filtrar" : ""}`;
+    for (let tentativa = 0; tentativa < 3; tentativa++) {
+      const atual = await (await github("/contents/feeds.txt")).json();
+      const gravacao = await github("/contents/feeds.txt", {
+        method: "PUT",
+        body: JSON.stringify({
+          message: `Adiciona o feed ${nome}`,
+          content: paraBase64(incluirNoFeedsTxt(deBase64(atual.content), pasta, linha)),
+          sha: atual.sha,
+        }),
+      });
+      if (gravacao.ok) {
+        estado.feeds.push({ url, nome, pasta, filtrar: $("#nf-filtrar").checked });
+        $("#novo-feed").close();
+        $("#novo-feed-form").reset();
+        selecionar({ tipo: "feed", nome });
+        atualizar(); // busca as matérias do feed novo
+        return;
+      }
+      if (gravacao.status !== 409 && gravacao.status !== 422) throw new Error(`GitHub respondeu ${gravacao.status}`);
+    }
+    throw new Error("o arquivo mudou várias vezes seguidas");
+  } catch (erro) {
+    msg.textContent = `Não consegui salvar: ${erro.message}`;
+    if (erro instanceof ErroToken) tratarErro(erro);
+  }
+}
+
 // ---------- início ----------
 
 function iniciar() {
   estado.materias = lerLocal("leitor.materias", []);
+  estado.feeds = lerLocal("leitor.feeds", []);
+  estado.selecao = lerLocal("leitor.selecao", { tipo: "tudo" });
   estado.lidos = new Set(lerLocal("leitor.lidos", []));
   const pendentes = lerLocal("leitor.pendentes", { add: [], remove: [] });
   estado.pendentes = { add: new Set(pendentes.add), remove: new Set(pendentes.remove) };
@@ -420,6 +593,10 @@ function iniciar() {
     desenhar();
   });
   $("#atualizar").addEventListener("click", atualizar);
+  $("#abrir-pastas").addEventListener("click", abrirPastas);
+  $("#fundo-pastas").addEventListener("click", fecharPastas);
+  $("#abrir-novo-feed").addEventListener("click", abrirNovoFeed);
+  $("#nf-salvar").addEventListener("click", salvarNovoFeed);
   $("#abrir-config").addEventListener("click", () => abrirConfig());
   $("#testar-token").addEventListener("click", testarToken);
   $("#voltar").addEventListener("click", () => history.back());

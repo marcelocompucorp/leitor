@@ -1,7 +1,7 @@
 // Guarda só os arquivos do app, para abrir rápido e permitir instalar.
 // As matérias vêm sempre da API do GitHub (nunca passam por este cache).
 // Mude VERSAO a cada publicação para os aparelhos pegarem o app novo.
-const VERSAO = "leitor-v2";
+const VERSAO = "leitor-v3";
 const ARQUIVOS = ["./", "index.html", "app.js", "estilo.css", "manifest.webmanifest", "icone-192.png", "icone-512.png"];
 
 self.addEventListener("install", (evento) => {
