@@ -573,6 +573,16 @@ function iniciar() {
     if (document.visibilityState === "hidden") sincronizarLidos();
     else carregar();
   });
+  // O que foi lido no outro aparelho aparece aqui sem precisar recarregar:
+  // confere os lidos a cada minuto e a lista inteira a cada 10, só com o app
+  // na tela (são chamadas pequenas, bem abaixo do limite da API do GitHub).
+  window.addEventListener("focus", sincronizarLidos);
+  setInterval(() => {
+    if (document.visibilityState === "visible") sincronizarLidos();
+  }, 60 * 1000);
+  setInterval(() => {
+    if (document.visibilityState === "visible") carregar();
+  }, 10 * 60 * 1000);
 
   desenhar();
   carregar();
