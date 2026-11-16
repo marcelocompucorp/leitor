@@ -2,8 +2,8 @@
 // As matérias vêm sempre da API do GitHub (nunca passam por este cache).
 // A cada publicação: aumente VERSAO aqui e o "?v=" de app.js e estilo.css no
 // index.html, para nenhum aparelho misturar arquivos de versões diferentes.
-const VERSAO = "leitor-v4";
-const ARQUIVOS = ["./", "index.html", "app.js?v=4", "estilo.css?v=4", "manifest.webmanifest", "icone-192.png", "icone-512.png"];
+const VERSAO = "leitor-v5";
+const ARQUIVOS = ["./", "index.html", "app.js?v=5", "estilo.css?v=5", "manifest.webmanifest", "icone-192.png", "icone-512.png"];
 
 self.addEventListener("install", (evento) => {
   evento.waitUntil(caches.open(VERSAO).then((cache) => cache.addAll(ARQUIVOS)));
