@@ -357,7 +357,9 @@ function desenhar() {
     titulo.textContent = materia.titulo;
     const meta = document.createElement("div");
     meta.className = "meta";
-    meta.textContent = [tempoRelativo(materia.data), materia.fonte].filter(Boolean).join(" · ");
+    meta.textContent = [tempoRelativo(materia.data), materia.fonte,
+      materia.comentarios ? `${materia.comentarios} comentário${materia.comentarios > 1 ? "s" : ""}` : ""]
+      .filter(Boolean).join(" · ");
     info.append(titulo, meta);
     if (estado.aba === "barradas") {
       const motivo = document.createElement("div");
@@ -421,6 +423,7 @@ async function abrir(materia, { empilhar = true } = {}) {
     texto.append(paragrafo("Texto completo indisponível; abra no site.", "aviso"));
   }
 
+  prepararComentarios(materia);
   if (materia.manter && !estado.lidos.has(materia.guid)) marcarLida(materia.guid, true);
   desenhar();
 }
@@ -493,6 +496,46 @@ function montarBloco(bloco) {
     default:
       return elemento("p", partes(bloco.partes));
   }
+}
+
+// Comentários: só são baixados quando você toca em "Ver comentários".
+function prepararComentarios(materia) {
+  const secao = $("#l-comentarios");
+  const botao = $("#l-ver-comentarios");
+  const lista = $("#l-lista-comentarios");
+  lista.replaceChildren();
+  secao.hidden = !materia.comentarios;
+  botao.hidden = false;
+  botao.disabled = false;
+  botao.textContent = `Ver ${materia.comentarios} comentário${materia.comentarios > 1 ? "s" : ""}`;
+  botao.onclick = async () => {
+    botao.disabled = true;
+    botao.textContent = "Carregando comentários…";
+    try {
+      const dados = await lerArquivo(`dados/comentarios/${materia.id}.json`);
+      if (estado.aberta !== materia) return;
+      lista.replaceChildren(...(dados?.comentarios || []).map(montarComentario));
+      botao.hidden = true;
+    } catch (erro) {
+      botao.disabled = false;
+      botao.textContent = "Não consegui carregar. Tentar de novo";
+      tratarErro(erro);
+    }
+  };
+}
+
+function montarComentario(comentario) {
+  const li = document.createElement("li");
+  li.style.setProperty("--nivel", Math.min(Math.max(comentario.nivel || 1, 1), 5) - 1);
+  const cabecalho = document.createElement("div");
+  cabecalho.className = "c-cabecalho";
+  const autor = document.createElement("b");
+  autor.textContent = comentario.autor;
+  const data = document.createElement("span");
+  data.textContent = dataDoComentario(comentario.data);
+  cabecalho.append(autor, data);
+  li.append(cabecalho, ...(comentario.paragrafos || []).map((p) => paragrafo(p)));
+  return li;
 }
 
 function paragrafo(conteudo, classe) {

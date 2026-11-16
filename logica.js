@@ -12,8 +12,9 @@ function lerFeeds(texto) {
       pasta = linha.slice(1, -1).trim();
       continue;
     }
-    const [url, nome, filtro = ""] = linha.split("|").map((p) => p.trim());
-    feeds.push({ url, nome: nome || url, pasta, filtrar: filtro.startsWith("filtrar") });
+    const [url, nome, opcoes = ""] = linha.split("|").map((p) => p.trim());
+    const filtrar = opcoes.split(/[\s,]+/).some((o) => o.startsWith("filtrar"));
+    feeds.push({ url, nome: nome || url, pasta, filtrar });
   }
   return feeds;
 }
@@ -88,6 +89,14 @@ function linkSeguro(endereco) {
   }
 }
 
+// "2026-11-16T06:38" (hora do site, sem fuso) -> "16 nov, 06:38".
+function dataDoComentario(data) {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}:\d{2})/.exec(data || "");
+  if (!partes) return "";
+  const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  return `${Number(partes[3])} ${meses[Number(partes[2]) - 1]}, ${partes[4]}`;
+}
+
 // O texto já abre com uma foto (nos primeiros blocos)? Aí a capa que vem do
 // feed sobra: muitas vezes é a mesma foto com outro endereço.
 function capaNoTexto(blocos) {
@@ -97,5 +106,6 @@ function capaNoTexto(blocos) {
 if (typeof module !== "undefined") {
   module.exports = {
     lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto,
+    dataDoComentario,
   };
 }

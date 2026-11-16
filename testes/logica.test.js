@@ -1,7 +1,7 @@
 // Rodar: node --test testes/
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto } = require("../logica.js");
+const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto, dataDoComentario } = require("../logica.js");
 
 const FEEDS_TXT = `# Comentário
 # outro
@@ -12,6 +12,8 @@ https://www.engadget.com/rss.xml | Engadget | filtrar
 [Viagem]
 https://www.headforpoints.com/feed/ | Head for Points
 https://md.com/sitemap_index.xml#promocao,milhas | Melhores Destinos | filtrar:perfil-viagem.md
+https://hfp.com/feed/ | HfP | comentarios
+https://x.com/feed/ | X | filtrar comentarios
 `;
 
 test("lerFeeds entende pastas, nomes e filtro", () => {
@@ -19,6 +21,8 @@ test("lerFeeds entende pastas, nomes e filtro", () => {
     { url: "https://www.engadget.com/rss.xml", nome: "Engadget", pasta: "Tecnologia", filtrar: true },
     { url: "https://www.headforpoints.com/feed/", nome: "Head for Points", pasta: "Viagem", filtrar: false },
     { url: "https://md.com/sitemap_index.xml#promocao,milhas", nome: "Melhores Destinos", pasta: "Viagem", filtrar: true },
+    { url: "https://hfp.com/feed/", nome: "HfP", pasta: "Viagem", filtrar: false },
+    { url: "https://x.com/feed/", nome: "X", pasta: "Viagem", filtrar: true },
   ]);
 });
 
@@ -32,7 +36,7 @@ test("incluirNoFeedsTxt põe o feed no fim da pasta existente", () => {
   const novo = incluirNoFeedsTxt(FEEDS_TXT, "Tecnologia", "https://x.com/rss | X");
   const feeds = lerFeeds(novo);
   assert.deepEqual(feeds.map((f) => `${f.pasta}/${f.nome}`), [
-    "Tecnologia/Engadget", "Tecnologia/X", "Viagem/Head for Points", "Viagem/Melhores Destinos",
+    "Tecnologia/Engadget", "Tecnologia/X", "Viagem/Head for Points", "Viagem/Melhores Destinos", "Viagem/HfP", "Viagem/X",
   ]);
   assert.ok(novo.startsWith("# Comentário\n# outro\n"), "não mexe nos comentários");
   assert.ok(novo.endsWith("\n") && !novo.endsWith("\n\n"), "termina com uma quebra de linha só");
@@ -46,8 +50,8 @@ test("incluirNoFeedsTxt cria a pasta nova no fim do arquivo", () => {
 
 test("incluirNoFeedsTxt na última pasta não engole linhas em branco no meio", () => {
   const novo = incluirNoFeedsTxt(FEEDS_TXT, "Viagem", "https://z.com/feed | Z");
-  assert.equal(lerFeeds(novo).length, 4);
-  assert.ok(novo.includes("Melhores Destinos | filtrar:perfil-viagem.md\nhttps://z.com/feed | Z\n"));
+  assert.equal(lerFeeds(novo).length, 6);
+  assert.ok(novo.includes("X | filtrar comentarios\nhttps://z.com/feed | Z\n"));
 });
 
 test("unirLidos junta os dois aparelhos e respeita o que foi desmarcado", () => {
@@ -113,4 +117,10 @@ test("capaNoTexto: o texto já abre com uma foto (então a capa de cima sai)", (
   assert.equal(capaNoTexto([img, p]), true);
   assert.equal(capaNoTexto([p, p, p, img]), false);  // foto mais para baixo é do meio da matéria
   assert.equal(capaNoTexto([]), false);
+});
+
+test("dataDoComentario", () => {
+  assert.equal(dataDoComentario("2026-11-16T06:38"), "16 nov, 06:38");
+  assert.equal(dataDoComentario("2026-12-01T23:05"), "1 dez, 23:05");
+  assert.equal(dataDoComentario(""), "");
 });
