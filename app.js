@@ -464,7 +464,8 @@ function montarBloco(bloco) {
       img.alt = bloco.legenda || "";
       img.loading = "lazy";
       img.referrerPolicy = "no-referrer";
-      return elemento("figure", bloco.legenda ? [img, elemento("figcaption", [], bloco.legenda)] : [img]);
+      const legenda = [bloco.legenda, bloco.credito && `Foto: ${bloco.credito}`].filter(Boolean).join(" · ");
+      return elemento("figure", legenda ? [img, elemento("figcaption", [], legenda)] : [img]);
     }
     default:
       return elemento("p", partes(bloco.partes));
