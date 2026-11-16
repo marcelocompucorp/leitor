@@ -301,6 +301,7 @@ function selecionar(selecao) {
   estado.selecao = selecao;
   gravarLocal("leitor.selecao", selecao);
   fecharPastas();
+  sairDaLeitura();
   desenhar();
   $("#lista-painel").scrollTop = 0;
 }
@@ -545,6 +546,14 @@ function paragrafo(conteudo, classe) {
   return p;
 }
 
+// Trocar de feed, pasta ou aba volta para a lista. No celular a matéria aberta
+// cobre a lista; sem isso a lista mudava por trás e nada aparecia.
+function sairDaLeitura() {
+  if (!estado.aberta) return;
+  if (history.state?.lendo) history.back(); // o "popstate" chama fecharLeitura
+  else fecharLeitura();
+}
+
 function fecharLeitura() {
   estado.aberta = null;
   document.body.classList.remove("lendo");
@@ -663,6 +672,7 @@ function iniciar() {
     botao.addEventListener("click", () => {
       estado.aba = botao.dataset.aba;
       document.querySelectorAll(".aba").forEach((b) => b.classList.toggle("ativa", b === botao));
+      sairDaLeitura();
       desenhar();
     }),
   );
