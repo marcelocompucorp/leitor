@@ -1,7 +1,7 @@
 // Rodar: node --test testes/
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro } = require("../logica.js");
+const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto } = require("../logica.js");
 
 const FEEDS_TXT = `# Comentário
 # outro
@@ -104,4 +104,13 @@ test("linkSeguro só deixa passar http e https", () => {
   for (const ruim of ["javascript:alert(1)", "data:text/html,oi", "  JavaScript:x", "/relativo", "", undefined]) {
     assert.equal(linkSeguro(ruim), null, String(ruim));
   }
+});
+
+test("capaNoTexto: o texto já abre com uma foto (então a capa de cima sai)", () => {
+  const p = { tipo: "p", partes: [{ texto: "x" }] };
+  const img = { tipo: "img", src: "https://e.com/intro-1.jpg", legenda: "" };
+  assert.equal(capaNoTexto([p, img, p]), true);      // Engadget: subtítulo e depois a foto
+  assert.equal(capaNoTexto([img, p]), true);
+  assert.equal(capaNoTexto([p, p, p, img]), false);  // foto mais para baixo é do meio da matéria
+  assert.equal(capaNoTexto([]), false);
 });

@@ -412,6 +412,7 @@ async function abrir(materia, { empilhar = true } = {}) {
       if (estado.aberta !== materia) return;
       const blocos = blocosDoTexto(dados).filter((b) => !(b.tipo === "img" && b.src === materia.imagem));
       texto.replaceChildren(...(blocos.length ? blocos.map(montarBloco) : [paragrafo(materia.resumo)]));
+      if (capaNoTexto(blocos)) $("#l-imagem").hidden = true;
     } catch (erro) {
       texto.replaceChildren(paragrafo(materia.resumo), paragrafo("Não consegui carregar o texto completo.", "aviso"));
       tratarErro(erro);

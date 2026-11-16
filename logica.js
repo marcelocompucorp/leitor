@@ -88,6 +88,14 @@ function linkSeguro(endereco) {
   }
 }
 
+// O texto já abre com uma foto (nos primeiros blocos)? Aí a capa que vem do
+// feed sobra: muitas vezes é a mesma foto com outro endereço.
+function capaNoTexto(blocos) {
+  return blocos.slice(0, 3).some((b) => b.tipo === "img");
+}
+
 if (typeof module !== "undefined") {
-  module.exports = { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro };
+  module.exports = {
+    lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto,
+  };
 }
