@@ -69,6 +69,25 @@ function rotuloDoDia(dataRss, agora = new Date()) {
   });
 }
 
+// dados/texto/<id>.json vem em blocos (formato 2) ou, nas matérias antigas,
+// como lista de parágrafos.
+function blocosDoTexto(dados) {
+  if (!dados) return [];
+  if (Array.isArray(dados.blocos)) return dados.blocos;
+  return (dados.paragrafos || []).map((texto) => ({ tipo: "p", partes: [{ texto }] }));
+}
+
+// Endereço que pode virar link ou imagem: só http(s) absoluto, nada de
+// "javascript:" ou "data:" vindo do site de origem.
+function linkSeguro(endereco) {
+  try {
+    const url = new URL(String(endereco ?? "").trim());
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 if (typeof module !== "undefined") {
-  module.exports = { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia };
+  module.exports = { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro };
 }

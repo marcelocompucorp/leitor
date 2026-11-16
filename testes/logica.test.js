@@ -1,7 +1,7 @@
 // Rodar: node --test testes/
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia } = require("../logica.js");
+const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro } = require("../logica.js");
 
 const FEEDS_TXT = `# Comentário
 # outro
@@ -86,4 +86,22 @@ test("rotuloDoDia agrupa pelo dia local, não pelo dia em UTC", () => {
   const quaseMeiaNoite = new Date(2026, 10, 15, 23, 30);
   assert.equal(rotuloDoDia(meiaNoiteEMeia.toUTCString(), agora), "Hoje");
   assert.equal(rotuloDoDia(quaseMeiaNoite.toUTCString(), agora), "Ontem");
+});
+
+test("blocosDoTexto aceita o formato novo e o antigo (só parágrafos)", () => {
+  const novo = { formato: 2, blocos: [{ tipo: "h", texto: "Seção" }] };
+  assert.deepEqual(blocosDoTexto(novo), novo.blocos);
+  assert.deepEqual(blocosDoTexto({ paragrafos: ["um", "dois"] }), [
+    { tipo: "p", partes: [{ texto: "um" }] },
+    { tipo: "p", partes: [{ texto: "dois" }] },
+  ]);
+  assert.deepEqual(blocosDoTexto(null), []);
+});
+
+test("linkSeguro só deixa passar http e https", () => {
+  assert.equal(linkSeguro("https://site.com/a?b=1"), "https://site.com/a?b=1");
+  assert.equal(linkSeguro("http://site.com"), "http://site.com/");
+  for (const ruim of ["javascript:alert(1)", "data:text/html,oi", "  JavaScript:x", "/relativo", "", undefined]) {
+    assert.equal(linkSeguro(ruim), null, String(ruim));
+  }
 });

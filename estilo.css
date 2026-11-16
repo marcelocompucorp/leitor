@@ -135,6 +135,16 @@ body.lendo #lista-painel { display: none; }
 #leitura h1 { font-size: 26px; line-height: 1.25; margin: 8px 0; }
 #l-imagem { width: 100%; border-radius: 10px; margin: 12px 0; }
 #l-texto p { margin: 0 0 1em; font-size: 18px; line-height: 1.6; }
+#l-titulo a { color: inherit; text-decoration: none; }
+#l-titulo a[href]:hover { text-decoration: underline; }
+#l-texto h2 { font-size: 21px; line-height: 1.3; margin: 1.6em 0 0.6em; }
+#l-texto ul { margin: 0 0 1em; padding-left: 1.4em; font-size: 18px; line-height: 1.6; }
+#l-texto li { margin-bottom: 0.3em; }
+#l-texto blockquote { margin: 0 0 1em; padding-left: 16px; border-left: 3px solid var(--borda); color: var(--texto-2); font-size: 18px; }
+#l-texto figure { margin: 1.4em 0; }
+#l-texto figure img { width: 100%; height: auto; border-radius: 10px; display: block; }
+#l-texto figcaption { font-size: 14px; color: var(--texto-2); margin-top: 6px; }
+#l-texto a { color: var(--destaque); }
 #l-texto .aviso { color: var(--texto-2); font-style: italic; font-size: 15px; }
 .motivo { font-size: 14px; color: var(--texto-2); font-style: italic; }
 .rodape-leitura { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 24px 0 48px; }

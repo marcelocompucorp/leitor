@@ -390,7 +390,10 @@ async function abrir(materia, { empilhar = true } = {}) {
   $("#leitura").scrollTop = 0;
   if (empilhar) history.pushState({ lendo: materia.guid }, "");
 
-  $("#l-titulo").textContent = materia.titulo;
+  const tituloLink = $("#l-titulo-link");
+  tituloLink.textContent = materia.titulo;
+  if (linkSeguro(materia.link)) tituloLink.href = linkSeguro(materia.link);
+  else tituloLink.removeAttribute("href");
   $("#l-meta").textContent = [tempoRelativo(materia.data), materia.fonte, ...(materia.categorias || [])]
     .filter(Boolean).join(" · ");
   const imagem = $("#l-imagem");
@@ -407,7 +410,8 @@ async function abrir(materia, { empilhar = true } = {}) {
     try {
       const dados = await lerArquivo(`dados/texto/${materia.id}.json`);
       if (estado.aberta !== materia) return;
-      texto.replaceChildren(...(dados?.paragrafos || [materia.resumo]).map((p) => paragrafo(p)));
+      const blocos = blocosDoTexto(dados).filter((b) => !(b.tipo === "img" && b.src === materia.imagem));
+      texto.replaceChildren(...(blocos.length ? blocos.map(montarBloco) : [paragrafo(materia.resumo)]));
     } catch (erro) {
       texto.replaceChildren(paragrafo(materia.resumo), paragrafo("Não consegui carregar o texto completo.", "aviso"));
       tratarErro(erro);
@@ -418,6 +422,53 @@ async function abrir(materia, { empilhar = true } = {}) {
 
   if (materia.manter && !estado.lidos.has(materia.guid)) marcarLida(materia.guid, true);
   desenhar();
+}
+
+// Monta um bloco do texto completo com elementos criados aqui e texto via
+// textContent: nada que veio do site é interpretado como HTML.
+function montarBloco(bloco) {
+  const elemento = (tag, filhos = [], texto) => {
+    const el = document.createElement(tag);
+    if (texto !== undefined) el.textContent = texto;
+    el.append(...filhos);
+    return el;
+  };
+  const partes = (lista = []) =>
+    lista.map((parte) => {
+      let el = document.createTextNode(parte.texto);
+      if (parte.italico) el = elemento("em", [el]);
+      if (parte.negrito) el = elemento("strong", [el]);
+      const href = parte.link && linkSeguro(parte.link);
+      if (href) {
+        const a = elemento("a", [el]);
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        el = a;
+      }
+      return el;
+    });
+
+  switch (bloco.tipo) {
+    case "h":
+      return elemento("h2", [], bloco.texto);
+    case "lista":
+      return elemento("ul", (bloco.itens || []).map((item) => elemento("li", partes(item))));
+    case "citacao":
+      return elemento("blockquote", partes(bloco.partes));
+    case "img": {
+      const src = linkSeguro(bloco.src);
+      if (!src) return document.createTextNode("");
+      const img = elemento("img");
+      img.src = src;
+      img.alt = bloco.legenda || "";
+      img.loading = "lazy";
+      img.referrerPolicy = "no-referrer";
+      return elemento("figure", bloco.legenda ? [img, elemento("figcaption", [], bloco.legenda)] : [img]);
+    }
+    default:
+      return elemento("p", partes(bloco.partes));
+  }
 }
 
 function paragrafo(conteudo, classe) {
