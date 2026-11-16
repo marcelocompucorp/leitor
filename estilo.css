@@ -105,6 +105,7 @@ body.lendo #lista-painel { display: none; }
 #lista li:hover, #lista li.selecionada { background: var(--fundo-2); }
 #lista li .miniatura {
   flex: 0 0 72px;
+  width: 72px;
   height: 72px;
   border-radius: 8px;
   object-fit: cover;

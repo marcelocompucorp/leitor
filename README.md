@@ -23,4 +23,5 @@ Cole no ⚙ do app, uma vez em cada aparelho.
 ## Publicar uma mudança
 
 HTML, CSS e JS puros, sem build. Ao mudar qualquer arquivo, aumente `VERSAO`
-em `sw.js` para os aparelhos pegarem a versão nova.
+em `sw.js` e o `?v=` de `app.js` e `estilo.css` no `index.html`, com o mesmo
+número, para os aparelhos pegarem a versão nova sem misturar arquivos.
