@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Leitor</title>
+  <meta name="theme-color" content="#1f6feb">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icone-192.png">
+  <link rel="apple-touch-icon" href="icone-192.png">
+  <link rel="stylesheet" href="estilo.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topo">
+    <nav class="abas">
+      <button class="aba ativa" data-aba="noticias">Notícias <span id="contador"></span></button>
+      <button class="aba" data-aba="barradas">Barradas</button>
+    </nav>
+    <div class="acoes">
+      <button id="atualizar" title="Buscar matérias novas">⟳</button>
+      <button id="abrir-config" title="Configuração">⚙</button>
+    </div>
+  </header>
+  <div id="status" hidden></div>
+
+  <main class="corpo">
+    <section id="lista-painel">
+      <div class="filtros" id="filtros">
+        <label><input type="checkbox" id="so-nao-lidas" checked> Só não lidas</label>
+        <button id="marcar-todas">Marcar todas como lidas</button>
+      </div>
+      <ul id="lista"></ul>
+      <p id="vazio" hidden></p>
+    </section>
+
+    <article id="leitura" hidden>
+      <button id="voltar" class="voltar">← Voltar</button>
+      <h1 id="l-titulo"></h1>
+      <p id="l-meta" class="meta"></p>
+      <img id="l-imagem" alt="" referrerpolicy="no-referrer" hidden>
+      <div id="l-texto"></div>
+      <p id="l-motivo" class="motivo"></p>
+      <p class="rodape-leitura">
+        <a id="l-link" target="_blank" rel="noopener noreferrer">Abrir no Engadget ↗</a>
+        <button id="l-nao-lida">Marcar como não lida</button>
+      </p>
+    </article>
+  </main>
+
+  <dialog id="config">
+    <form method="dialog" id="config-form">
+      <h2>Configuração</h2>
+      <p>
+        Cole um token do GitHub (fine-grained) com acesso só ao repositório
+        <code>news_feed</code>, permissões <b>Contents</b> e <b>Actions</b> em
+        leitura e escrita.
+        <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Criar token ↗</a>
+      </p>
+      <input type="password" id="token" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+      <p id="config-msg"></p>
+      <menu>
+        <button type="button" id="testar-token">Testar e salvar</button>
+        <button value="fechar">Fechar</button>
+      </menu>
+    </form>
+  </dialog>
+</body>
+</html>
