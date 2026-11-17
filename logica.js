@@ -103,6 +103,13 @@ function capaNoTexto(blocos) {
   return blocos.slice(0, 3).some((b) => b.tipo === "img");
 }
 
+// Depois de gravar no GitHub, tira dos pendentes só o que foi enviado. O que
+// foi marcado enquanto a gravação estava em andamento continua pendente.
+function tirarEnviados(pendentes, enviados) {
+  const sobra = (atual, foi) => new Set([...atual].filter((g) => !foi.has(g)));
+  return { add: sobra(pendentes.add, enviados.add), remove: sobra(pendentes.remove, enviados.remove) };
+}
+
 // Arrastar um item da lista para a esquerda marca como lida (ou não lida).
 // direcaoDoArrasto decide, nos primeiros pixels, se o dedo está arrastando o
 // item (horizontal) ou rolando a lista (vertical); até 10 px ainda não sabe.
@@ -119,6 +126,6 @@ function arrastoCompleto(dx, largura) {
 if (typeof module !== "undefined") {
   module.exports = {
     lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto,
-    dataDoComentario, direcaoDoArrasto, arrastoCompleto,
+    dataDoComentario, direcaoDoArrasto, tirarEnviados, arrastoCompleto,
   };
 }

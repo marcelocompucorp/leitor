@@ -123,11 +123,14 @@ async function sincronizarLidos() {
         throw new Error(`Falha ao ler os lidos: ${resposta.status}`);
       }
 
-      const final = unirLidos(remoto, estado.pendentes, estado.materias.map((m) => m.guid));
+      const guids = estado.materias.map((m) => m.guid);
+      // cópia do que vai agora: o que for marcado durante a gravação fica para a próxima
+      const enviados = { add: new Set(estado.pendentes.add), remove: new Set(estado.pendentes.remove) };
+      const final = unirLidos(remoto, enviados, guids);
 
-      const semMudanca = estado.pendentes.add.size === 0 && estado.pendentes.remove.size === 0;
+      const semMudanca = enviados.add.size === 0 && enviados.remove.size === 0;
       if (semMudanca) {
-        estado.lidos = new Set(final);
+        estado.lidos = new Set(unirLidos(final, estado.pendentes, guids));
         salvarLidosLocal();
         return;
       }
@@ -141,8 +144,8 @@ async function sincronizarLidos() {
         }),
       });
       if (gravacao.ok) {
-        estado.lidos = new Set(final);
-        estado.pendentes = { add: new Set(), remove: new Set() };
+        estado.pendentes = tirarEnviados(estado.pendentes, enviados);
+        estado.lidos = new Set(unirLidos(final, estado.pendentes, guids));
         salvarLidosLocal();
         return;
       }
@@ -155,6 +158,8 @@ async function sincronizarLidos() {
     tratarErro(erro);
   } finally {
     sincronizando = false;
+    // marcou algo enquanto gravava: o agendarSync daquela hora foi ignorado
+    if (estado.pendentes.add.size || estado.pendentes.remove.size) agendarSync();
     desenhar();
   }
 }

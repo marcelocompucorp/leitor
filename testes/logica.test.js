@@ -1,7 +1,7 @@
 // Rodar: node --test testes/
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto, dataDoComentario, direcaoDoArrasto, arrastoCompleto } = require("../logica.js");
+const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto, dataDoComentario, direcaoDoArrasto, arrastoCompleto, tirarEnviados } = require("../logica.js");
 
 const FEEDS_TXT = `# Comentário
 # outro
@@ -137,4 +137,14 @@ test("arrastoCompleto: só para a esquerda e longe o bastante", () => {
   assert.equal(arrastoCompleto(-60, 412), false);          // soltou cedo, volta
   assert.equal(arrastoCompleto(150, 412), false);          // para a direita não faz nada
   assert.equal(arrastoCompleto(-100, 300), true);          // tela estreita: 30% da largura
+});
+
+test("tirarEnviados mantém o que foi marcado durante a gravação", () => {
+  // No desktop: abriu a 1 (sincronização começou), abriu a 2 antes de terminar (17/11/2026).
+  const enviados = { add: new Set(["g1"]), remove: new Set() };
+  const agora = { add: new Set(["g1", "g2"]), remove: new Set(["g0"]) };
+  const sobra = tirarEnviados(agora, enviados);
+  assert.deepEqual([...sobra.add], ["g2"]);
+  assert.deepEqual([...sobra.remove], ["g0"]);
+  assert.deepEqual(unirLidos(["g1"], sobra, ["g0", "g1", "g2"]), ["g1", "g2"]);
 });
