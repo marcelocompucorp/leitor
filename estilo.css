@@ -129,6 +129,27 @@ body.lendo #lista-painel { display: none; }
 #lista li .motivo { font-size: 13px; color: var(--texto-2); font-style: italic; margin-top: 4px; }
 #lista li .ponto { flex: 0 0 8px; height: 8px; border-radius: 50%; background: var(--destaque); margin-top: 6px; }
 #lista li.lida .ponto { visibility: hidden; }
+
+/* Arrastar para a esquerda: o conteúdo anda e a ação aparece à direita */
+#lista li:not(.divisor) { position: relative; overflow: hidden; touch-action: pan-y; }
+#lista li > :not(.acao) { transform: translateX(var(--dx, 0)); transition: transform 150ms ease-out; }
+#lista li.arrastando > :not(.acao) { transition: none; }
+#lista li.arrastando { cursor: grabbing; user-select: none; }
+#lista li .acao {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  background: var(--destaque);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+}
+#lista li.concluindo .acao { transition: width 150ms ease-out; }
 #vazio { padding: 32px 16px; text-align: center; color: var(--texto-2); }
 
 /* Leitura */

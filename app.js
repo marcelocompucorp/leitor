@@ -375,7 +375,11 @@ function desenhar() {
       ponto.className = "ponto";
       li.append(ponto);
     }
-    li.addEventListener("click", () => abrir(materia));
+    li.addEventListener("click", () => {
+      if (li.dataset.arrastou) return;     // o toque terminou um arrasto, não abre
+      abrir(materia);
+    });
+    if (estado.aba === "noticias") permitirArrasto(li, materia);
     lista.append(li);
   }
 
@@ -384,6 +388,56 @@ function desenhar() {
   vazio.textContent = estado.aba === "barradas"
     ? "Nenhuma matéria barrada."
     : "Nada novo por aqui. Toque em ⟳ para buscar matérias novas.";
+}
+
+// Arrastar o item para a esquerda (no celular) alterna lida / não lida.
+function permitirArrasto(li, materia) {
+  const acao = document.createElement("span");
+  acao.className = "acao";
+  acao.textContent = estado.lidos.has(materia.guid) ? "Não lida" : "✓ Lida";
+  li.prepend(acao);
+
+  let inicio = null, direcao = null, dx = 0;
+  const mover = (x) => {
+    li.style.setProperty("--dx", `${x}px`);
+    acao.style.width = `${Math.max(0, -x)}px`;
+  };
+  const soltar = () => {
+    li.classList.remove("arrastando");
+    if (direcao === "horizontal") {
+      li.dataset.arrastou = "1";
+      setTimeout(() => delete li.dataset.arrastou, 0);   // depois do click que vem junto
+      if (arrastoCompleto(dx, li.offsetWidth)) {
+        const lida = !estado.lidos.has(materia.guid);
+        marcarLida(materia.guid, lida);
+        const some = lida && $("#so-nao-lidas").checked && materia !== estado.aberta;
+        li.classList.add("concluindo");
+        mover(some ? -li.offsetWidth : 0);
+        setTimeout(desenhar, some ? 200 : 150);
+      } else {
+        mover(0);
+      }
+    }
+    inicio = null; direcao = null; dx = 0;
+  };
+
+  li.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") return;   // no Mac continua o clique normal
+    inicio = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    direcao = null; dx = 0;
+  });
+  li.addEventListener("pointermove", (e) => {
+    if (!inicio || e.pointerId !== inicio.id) return;
+    const ddx = e.clientX - inicio.x, ddy = e.clientY - inicio.y;
+    if (!direcao) {
+      direcao = direcaoDoArrasto(ddx, ddy);
+      if (direcao === "vertical") { inicio = null; return; }
+      if (direcao === "horizontal") { try { li.setPointerCapture(e.pointerId); } catch {} li.classList.add("arrastando"); }
+    }
+    if (direcao === "horizontal") { dx = Math.min(0, ddx); mover(dx); }
+  });
+  li.addEventListener("pointerup", soltar);
+  li.addEventListener("pointercancel", () => { direcao = direcao === "horizontal" ? "cancelado" : direcao; mover(0); soltar(); });
 }
 
 async function abrir(materia, { empilhar = true } = {}) {

@@ -103,9 +103,22 @@ function capaNoTexto(blocos) {
   return blocos.slice(0, 3).some((b) => b.tipo === "img");
 }
 
+// Arrastar um item da lista para a esquerda marca como lida (ou não lida).
+// direcaoDoArrasto decide, nos primeiros pixels, se o dedo está arrastando o
+// item (horizontal) ou rolando a lista (vertical); até 10 px ainda não sabe.
+function direcaoDoArrasto(dx, dy) {
+  if (Math.hypot(dx, dy) < 10) return null;
+  return Math.abs(dx) > Math.abs(dy) * 1.5 ? "horizontal" : "vertical";
+}
+
+// Só conta para a esquerda e a partir de 30% da largura (no máximo 120 px).
+function arrastoCompleto(dx, largura) {
+  return dx <= -Math.min(120, largura * 0.3);
+}
+
 if (typeof module !== "undefined") {
   module.exports = {
     lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto,
-    dataDoComentario,
+    dataDoComentario, direcaoDoArrasto, arrastoCompleto,
   };
 }

@@ -1,7 +1,7 @@
 // Rodar: node --test testes/
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto, dataDoComentario } = require("../logica.js");
+const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto, dataDoComentario, direcaoDoArrasto, arrastoCompleto } = require("../logica.js");
 
 const FEEDS_TXT = `# Comentário
 # outro
@@ -123,4 +123,18 @@ test("dataDoComentario", () => {
   assert.equal(dataDoComentario("2026-11-16T06:38"), "16 nov, 06:38");
   assert.equal(dataDoComentario("2026-12-01T23:05"), "1 dez, 23:05");
   assert.equal(dataDoComentario(""), "");
+});
+
+test("direcaoDoArrasto: separa arrastar o item de rolar a lista", () => {
+  assert.equal(direcaoDoArrasto(3, 2), null);             // pouco movimento, ainda não sabe
+  assert.equal(direcaoDoArrasto(-30, 5), "horizontal");
+  assert.equal(direcaoDoArrasto(4, 40), "vertical");
+  assert.equal(direcaoDoArrasto(-20, 18), "vertical");    // diagonal conta como rolagem
+});
+
+test("arrastoCompleto: só para a esquerda e longe o bastante", () => {
+  assert.equal(arrastoCompleto(-150, 412), true);
+  assert.equal(arrastoCompleto(-60, 412), false);          // soltou cedo, volta
+  assert.equal(arrastoCompleto(150, 412), false);          // para a direita não faz nada
+  assert.equal(arrastoCompleto(-100, 300), true);          // tela estreita: 30% da largura
 });
