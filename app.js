@@ -451,6 +451,10 @@ async function abrir(materia, { empilhar = true } = {}) {
   $("#leitura").hidden = false;
   $("#leitura").scrollTop = 0;
   if (empilhar) history.pushState({ lendo: materia.guid }, "");
+  // Marca já no clique: se esperasse o texto carregar, quem passa para a
+  // próxima antes disso deixava esta como não lida (17/11/2026).
+  if (materia.manter && !estado.lidos.has(materia.guid)) marcarLida(materia.guid, true);
+  desenhar();
 
   const tituloLink = $("#l-titulo-link");
   tituloLink.textContent = materia.titulo;
@@ -484,8 +488,6 @@ async function abrir(materia, { empilhar = true } = {}) {
   }
 
   prepararComentarios(materia);
-  if (materia.manter && !estado.lidos.has(materia.guid)) marcarLida(materia.guid, true);
-  desenhar();
 }
 
 // Monta um bloco do texto completo com elementos criados aqui e texto via

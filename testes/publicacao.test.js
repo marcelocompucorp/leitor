@@ -43,3 +43,13 @@ test("todo id que o app.js procura existe no index.html", () => {
   const ids = new Set([...app.matchAll(/\$\("#([\w-]+)"\)/g)].map((m) => m[1]));
   for (const id of ids) assert.match(html, new RegExp(`id="${id}"`), `#${id} não existe no index.html`);
 });
+
+test("abrir marca como lida antes de esperar o texto carregar", () => {
+  // Marcando depois do await, quem passava para a próxima matéria antes do
+  // texto chegar deixava a anterior como não lida (17/11/2026).
+  const app = ler("app.js");
+  const abrir = app.slice(app.indexOf("async function abrir("));
+  const corpo = abrir.slice(0, abrir.indexOf("\n}\n"));
+  assert.ok(corpo.includes("marcarLida(materia.guid, true)"));
+  assert.ok(corpo.indexOf("marcarLida(materia.guid, true)") < corpo.indexOf("await "));
+});
