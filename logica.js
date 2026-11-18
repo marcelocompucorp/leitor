@@ -118,14 +118,29 @@ function direcaoDoArrasto(dx, dy) {
   return Math.abs(dx) > Math.abs(dy) * 1.5 ? "horizontal" : "vertical";
 }
 
-// Só conta para a esquerda e a partir de 30% da largura (no máximo 120 px).
-function arrastoCompleto(dx, largura) {
-  return dx <= -Math.min(120, largura * 0.3);
+// Para a esquerda marca como lida, para a direita como não lida; só a partir
+// de 30% da largura (no máximo 120 px). Antes disso, solta e volta.
+function acaoDoArrasto(dx, largura) {
+  const minimo = Math.min(120, largura * 0.3);
+  if (dx <= -minimo) return "lida";
+  if (dx >= minimo) return "nao-lida";
+  return null;
+}
+
+// Busca: todas as palavras precisam aparecer no título, resumo, site ou
+// categorias, sem ligar para maiúsculas e acentos.
+const semAcento = (texto) => String(texto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function casaBusca(materia, busca) {
+  const palavras = semAcento(busca).split(/\s+/).filter(Boolean);
+  if (!palavras.length) return true;
+  const onde = semAcento([materia.titulo, materia.resumo, materia.fonte, ...(materia.categorias || [])].join(" "));
+  return palavras.every((p) => onde.includes(p));
 }
 
 if (typeof module !== "undefined") {
   module.exports = {
     lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto,
-    dataDoComentario, direcaoDoArrasto, tirarEnviados, arrastoCompleto,
+    dataDoComentario, direcaoDoArrasto, tirarEnviados, acaoDoArrasto, casaBusca,
   };
 }

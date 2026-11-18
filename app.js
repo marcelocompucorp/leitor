@@ -250,7 +250,10 @@ function naSelecao(m) {
 }
 
 function visiveis() {
-  const selecionadas = estado.materias.filter(naSelecao);
+  const busca = $("#busca").value.trim();
+  const selecionadas = estado.materias.filter((m) => naSelecao(m) && casaBusca(m, busca));
+  // buscando, aparecem também as já lidas
+  if (busca && estado.aba === "noticias") return selecionadas.filter((m) => m.manter);
   if (estado.aba === "barradas") return selecionadas.filter((m) => !m.manter);
   const aprovadas = selecionadas.filter((m) => m.manter);
   return $("#so-nao-lidas").checked
@@ -390,7 +393,9 @@ function desenhar() {
 
   const vazio = $("#vazio");
   vazio.hidden = itens.length > 0;
-  vazio.textContent = estado.aba === "barradas"
+  vazio.textContent = $("#busca").value.trim()
+    ? "Nenhuma matéria encontrada."
+    : estado.aba === "barradas"
     ? "Nenhuma matéria barrada."
     : "Nada novo por aqui. Toque em ⟳ para buscar matérias novas.";
 }
@@ -399,23 +404,25 @@ function desenhar() {
 function permitirArrasto(li, materia) {
   const acao = document.createElement("span");
   acao.className = "acao";
-  acao.textContent = estado.lidos.has(materia.guid) ? "Não lida" : "✓ Lida";
   li.prepend(acao);
 
   let inicio = null, direcao = null, dx = 0;
   const mover = (x) => {
     li.style.setProperty("--dx", `${x}px`);
-    acao.style.width = `${Math.max(0, -x)}px`;
+    acao.classList.toggle("direita", x > 0);
+    acao.textContent = x > 0 ? "● Não lida" : "✓ Lida";
+    acao.style.width = `${Math.abs(x)}px`;
   };
   const soltar = () => {
     li.classList.remove("arrastando");
     if (direcao === "horizontal") {
       li.dataset.arrastou = "1";
       setTimeout(() => delete li.dataset.arrastou, 0);   // depois do click que vem junto
-      if (arrastoCompleto(dx, li.offsetWidth)) {
-        const lida = !estado.lidos.has(materia.guid);
-        marcarLida(materia.guid, lida);
-        const some = lida && $("#so-nao-lidas").checked && materia !== estado.aberta;
+      const resultado = acaoDoArrasto(dx, li.offsetWidth);
+      if (resultado) {
+        const lida = resultado === "lida";
+        if (estado.lidos.has(materia.guid) !== lida) marcarLida(materia.guid, lida);
+        const some = lida && $("#so-nao-lidas").checked && !$("#busca").value.trim() && materia !== estado.aberta;
         li.classList.add("concluindo");
         mover(some ? -li.offsetWidth : 0);
         setTimeout(desenhar, some ? 200 : 150);
@@ -439,7 +446,7 @@ function permitirArrasto(li, materia) {
       if (direcao === "vertical") { inicio = null; return; }
       if (direcao === "horizontal") { try { li.setPointerCapture(e.pointerId); } catch {} li.classList.add("arrastando"); }
     }
-    if (direcao === "horizontal") { dx = Math.min(0, ddx); mover(dx); }
+    if (direcao === "horizontal") { dx = ddx; mover(dx); }
   });
   li.addEventListener("pointerup", soltar);
   li.addEventListener("pointercancel", () => { direcao = direcao === "horizontal" ? "cancelado" : direcao; mover(0); soltar(); });
@@ -744,6 +751,10 @@ function iniciar() {
   $("#marcar-todas").addEventListener("click", () => {
     for (const m of estado.materias) if (m.manter && !estado.lidos.has(m.guid)) marcarLida(m.guid, true);
     desenhar();
+  });
+  $("#busca").addEventListener("input", desenhar);
+  $("#busca").addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.target.value = ""; desenhar(); }
   });
   $("#atualizar").addEventListener("click", atualizar);
   $("#abrir-pastas").addEventListener("click", abrirPastas);

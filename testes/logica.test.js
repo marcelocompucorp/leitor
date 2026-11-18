@@ -1,7 +1,7 @@
 // Rodar: node --test testes/
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto, dataDoComentario, direcaoDoArrasto, arrastoCompleto, tirarEnviados } = require("../logica.js");
+const { lerFeeds, incluirNoFeedsTxt, unirLidos, tempoRelativo, rotuloDoDia, blocosDoTexto, linkSeguro, capaNoTexto, dataDoComentario, direcaoDoArrasto, acaoDoArrasto, casaBusca, tirarEnviados } = require("../logica.js");
 
 const FEEDS_TXT = `# Comentário
 # outro
@@ -132,11 +132,21 @@ test("direcaoDoArrasto: separa arrastar o item de rolar a lista", () => {
   assert.equal(direcaoDoArrasto(-20, 18), "vertical");    // diagonal conta como rolagem
 });
 
-test("arrastoCompleto: só para a esquerda e longe o bastante", () => {
-  assert.equal(arrastoCompleto(-150, 412), true);
-  assert.equal(arrastoCompleto(-60, 412), false);          // soltou cedo, volta
-  assert.equal(arrastoCompleto(150, 412), false);          // para a direita não faz nada
-  assert.equal(arrastoCompleto(-100, 300), true);          // tela estreita: 30% da largura
+test("acaoDoArrasto: esquerda lida, direita não lida, curto não faz nada", () => {
+  assert.equal(acaoDoArrasto(-150, 412), "lida");
+  assert.equal(acaoDoArrasto(150, 412), "nao-lida");
+  assert.equal(acaoDoArrasto(-60, 412), null);             // soltou cedo, volta
+  assert.equal(acaoDoArrasto(60, 412), null);
+  assert.equal(acaoDoArrasto(-100, 300), "lida");          // tela estreita: 30% da largura
+});
+
+test("casaBusca: todas as palavras, sem maiúsculas nem acentos", () => {
+  const m = { titulo: "Passagens para São Paulo", resumo: "Promoção da Latam", fonte: "Melhores Destinos", categorias: ["Voos"] };
+  assert.equal(casaBusca(m, ""), true);
+  assert.equal(casaBusca(m, "sao paulo"), true);
+  assert.equal(casaBusca(m, "PROMOCAO latam"), true);
+  assert.equal(casaBusca(m, "melhores voos"), true);       // site e categoria contam
+  assert.equal(casaBusca(m, "paulo gol"), false);           // falta uma palavra
 });
 
 test("tirarEnviados mantém o que foi marcado durante a gravação", () => {
