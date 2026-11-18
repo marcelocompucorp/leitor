@@ -73,12 +73,13 @@ a { color: var(--destaque); }
 /* Corpo: uma coluna no celular, duas no desktop */
 .corpo { flex: 1; min-height: 0; display: flex; }
 #lista-painel { flex: 1; overflow-y: auto; }
-#leitura { flex: 1; overflow-y: auto; padding: 16px; max-width: 760px; }
+#leitura { flex: 1; min-width: 0; overflow-y: auto; padding: 16px; }
 body.lendo #lista-painel { display: none; }
 @media (min-width: 900px) {
   #lista-painel { flex: 0 0 420px; border-right: 1px solid var(--borda); }
   body.lendo #lista-painel { display: block; }
-  #leitura { padding: 24px 40px; }
+  /* painel na largura toda; o texto fica numa coluna de 680 px no meio */
+  #leitura { padding: 24px 40px; display: grid; grid-template-columns: minmax(0, 680px); justify-content: center; align-content: start; }
   .voltar { display: none; }
 }
 
