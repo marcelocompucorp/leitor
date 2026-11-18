@@ -8,9 +8,9 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icone-192.png">
   <link rel="apple-touch-icon" href="icone-192.png">
-  <link rel="stylesheet" href="estilo.css?v=19">
-  <script src="logica.js?v=19" defer></script>
-  <script src="app.js?v=19" defer></script>
+  <link rel="stylesheet" href="estilo.css?v=20">
+  <script src="logica.js?v=20" defer></script>
+  <script src="app.js?v=20" defer></script>
 </head>
 <body>
   <header class="topo">
@@ -47,7 +47,10 @@
     <article id="leitura" hidden>
       <button id="voltar" class="voltar">← Voltar</button>
       <h1 id="l-titulo"><a id="l-titulo-link" target="_blank" rel="noopener noreferrer"></a></h1>
-      <p id="l-meta" class="meta"></p>
+      <div class="l-topo">
+        <p id="l-meta" class="meta"></p>
+        <button id="l-nao-lida-topo" class="pequeno">Marcar como não lida</button>
+      </div>
       <img id="l-imagem" alt="" referrerpolicy="no-referrer" hidden>
       <div id="l-texto"></div>
       <p id="l-motivo" class="motivo"></p>

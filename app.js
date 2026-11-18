@@ -475,6 +475,7 @@ async function abrir(materia, { empilhar = true } = {}) {
   $("#l-motivo").textContent = materia.motivo ? `Filtro: ${materia.motivo}` : "";
   $("#l-link").href = materia.link;
   $("#l-nao-lida").hidden = !materia.manter;
+  $("#l-nao-lida-topo").hidden = !materia.manter;
 
   const texto = $("#l-texto");
   texto.replaceChildren(paragrafo(materia.resumo));
@@ -764,10 +765,12 @@ function iniciar() {
   $("#abrir-config").addEventListener("click", () => abrirConfig());
   $("#testar-token").addEventListener("click", testarToken);
   $("#voltar").addEventListener("click", () => history.back());
-  $("#l-nao-lida").addEventListener("click", () => {
-    if (estado.aberta) marcarLida(estado.aberta.guid, false);
-    desenhar();
-  });
+  for (const botao of [$("#l-nao-lida"), $("#l-nao-lida-topo")]) {
+    botao.addEventListener("click", () => {
+      if (estado.aberta) marcarLida(estado.aberta.guid, false);
+      desenhar();
+    });
+  }
   window.addEventListener("popstate", fecharLeitura);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") sincronizarLidos();

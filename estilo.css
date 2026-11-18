@@ -281,3 +281,8 @@ dialog label.linha input { width: auto; }
   box-sizing: border-box;
 }
 #busca:focus { outline: 2px solid var(--destaque); outline-offset: -1px; }
+
+/* Topo da matéria: data e site à esquerda, "Marcar como não lida" à direita */
+.l-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.l-topo .meta { margin: 0; }
+.l-topo button.pequeno { font-size: 13px; padding: 4px 10px; }
